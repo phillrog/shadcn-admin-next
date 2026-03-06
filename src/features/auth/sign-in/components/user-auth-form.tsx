@@ -48,8 +48,8 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: 'admin@gmail.com',
+      password: 'password123',
     },
   })
 
@@ -76,6 +76,7 @@ export function UserAuthForm({
         // Redirect to the stored location or default to dashboard
         const targetPath = redirectTo || '/'
         router.replace(targetPath)
+        router.refresh()
 
         return `Welcome back, ${data.email}!`
       },
@@ -135,6 +136,7 @@ export function UserAuthForm({
             onClick={() => {
               form.setValue('email', 'admin@gmail.com')
               form.setValue('password', 'password123')
+              form.handleSubmit(onSubmit)()
             }}
           >
             Admin Login

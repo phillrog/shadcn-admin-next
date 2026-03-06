@@ -2,18 +2,26 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth_token')?.value
+  const token = request.cookies.get('sat_token')?.value
   const { pathname } = request.nextUrl
 
-  // Se o usuário tentar acessar o dashboard sem token, redireciona para sign-in
-  if (!token && !pathname.startsWith('/sign-in') && !pathname.startsWith('/sign-up') && !pathname.startsWith('/forgot-password') && !pathname.startsWith('/otp')) {
+  const isAuthRoute = 
+    pathname.startsWith('/sign-in') || 
+    pathname.startsWith('/sign-up') || 
+    pathname.startsWith('/forgot-password') || 
+    pathname.startsWith('/otp')
+
+  // Se NÃO tem token e NÃO está em uma rota de auth, redireciona para sign-in
+  if (!token && !isAuthRoute) {
+    const url = new URL('/sign-in', request.url)
     if (pathname !== '/') {
-        return NextResponse.redirect(new URL('/sign-in', request.url))
+        url.searchParams.set('redirect', pathname)
     }
+    return NextResponse.redirect(url)
   }
 
-  // Se o usuário já estiver logado e tentar acessar o sign-in, redireciona para o dashboard
-  if (token && pathname.startsWith('/sign-in')) {
+  // Se TEM token e está em uma rota de auth, redireciona para o dashboard
+  if (token && isAuthRoute) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
