@@ -5,11 +5,6 @@ import {
   type VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
@@ -56,8 +51,38 @@ export function TasksTable({ data }: DataTableProps) {
     ensurePageInRange,
   } = useTableUrlState(urlStateConfig)
 
+  const filteredData = useMemo(() => {
+    return data.filter(task => {
+
+      if (globalFilter) {
+        const search = globalFilter.toLowerCase()
+        const match = 
+          task.id.toLowerCase().includes(search) || 
+          task.title.toLowerCase().includes(search)
+        if (!match) return false
+      }
+
+      // Column Filters
+      for (const filter of columnFilters) {
+        const val = task[filter.id as keyof Task]
+        if (Array.isArray(filter.value)) {
+          if (filter.value.length > 0 && !filter.value.includes(val)) return false
+        } else if (typeof filter.value === 'string' && filter.value !== '') {
+          if (!String(val).toLowerCase().includes(filter.value.toLowerCase())) return false
+        }
+      }
+      return true
+    })
+  }, [data, columnFilters, globalFilter])
+
+  const pagedData = useMemo(() => {
+    const start = pagination.pageIndex * pagination.pageSize
+    const end = start + pagination.pageSize
+    return filteredData.slice(start, end)
+  }, [filteredData, pagination])
+
   const table = useReactTable({
-    data,
+    data: pagedData,
     columns,
     state: {
       sorting,
@@ -67,10 +92,9 @@ export function TasksTable({ data }: DataTableProps) {
       globalFilter,
       pagination,
     },
-    // Crucial: O estado vem da URL, então tratamos como "manual"
     manualPagination: true,
     manualFiltering: true,
-    pageCount: Math.ceil(data.length / pagination.pageSize),
+    pageCount: Math.ceil(filteredData.length / pagination.pageSize),
     
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -81,38 +105,16 @@ export function TasksTable({ data }: DataTableProps) {
     onColumnFiltersChange,
     
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
-
-  // Sincronizar dados visíveis (já que data é local mas a paginação é "manual")
-  const pagedData = useMemo(() => {
-    const start = pagination.pageIndex * pagination.pageSize
-    const end = start + pagination.pageSize
-    return data.slice(start, end)
-  }, [data, pagination])
-
-  // Atualizar os dados da tabela manualmente se necessário
-  // mas aqui o React Table v8 permite apenas injetar a state. 
-  // No entanto, como manualPagination: true, o table.getRowModel() usará 'data' literal.
-  // Então precisamos passar o data já fatiado.
-  
-  const tableWithData = useReactTable({
-    ...table.options,
-    data: pagedData,
   })
 
   useEffect(() => {
-    ensurePageInRange(Math.ceil(data.length / pagination.pageSize))
-  }, [data.length, pagination.pageSize, ensurePageInRange])
+    ensurePageInRange(Math.ceil(filteredData.length / pagination.pageSize))
+  }, [filteredData.length, pagination.pageSize, ensurePageInRange])
 
   return (
     <div className={cn('max-sm:has-[div[role="toolbar"]]:mb-16', 'flex flex-1 flex-col gap-4')}>
       <DataTableToolbar
-        table={tableWithData}
+        table={table}
         searchPlaceholder='Filter by title or ID...'
         filters={[
           { columnId: 'status', title: 'Status', options: statuses },
@@ -122,7 +124,7 @@ export function TasksTable({ data }: DataTableProps) {
       <div className='overflow-hidden rounded-md border'>
         <Table className='min-w-xl'>
           <TableHeader>
-            {tableWithData.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} colSpan={header.colSpan}>
@@ -133,8 +135,8 @@ export function TasksTable({ data }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {tableWithData.getRowModel().rows?.length ? (
-              tableWithData.getRowModel().rows.map((row) => (
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -151,8 +153,8 @@ export function TasksTable({ data }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={tableWithData} className='mt-auto' />
-      <DataTableBulkActions table={tableWithData} />
+      <DataTablePagination table={table} className='mt-auto' />
+      <DataTableBulkActions table={table} />
     </div>
   )
 }

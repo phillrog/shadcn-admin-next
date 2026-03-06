@@ -5,11 +5,6 @@ import {
   type VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
@@ -57,8 +52,28 @@ export function UsersTable({ data }: DataTableProps) {
     ensurePageInRange,
   } = useTableUrlState(urlStateConfig)
 
+  const filteredData = useMemo(() => {
+    return data.filter(user => {
+      for (const filter of columnFilters) {
+        const val = user[filter.id as keyof User]
+        if (Array.isArray(filter.value)) {
+          if (filter.value.length > 0 && !filter.value.includes(val)) return false
+        } else if (typeof filter.value === 'string' && filter.value !== '') {
+          if (!String(val).toLowerCase().includes(filter.value.toLowerCase())) return false
+        }
+      }
+      return true
+    })
+  }, [data, columnFilters])
+
+  const pagedData = useMemo(() => {
+    const start = pagination.pageIndex * pagination.pageSize
+    const end = start + pagination.pageSize
+    return filteredData.slice(start, end)
+  }, [filteredData, pagination])
+
   const table = useReactTable({
-    data,
+    data: pagedData,
     columns,
     state: {
       sorting,
@@ -67,18 +82,16 @@ export function UsersTable({ data }: DataTableProps) {
       columnFilters,
       columnVisibility,
     },
+    manualPagination: true,
+    manualFiltering: true,
+    pageCount: Math.ceil(filteredData.length / pagination.pageSize),
     enableRowSelection: true,
     onPaginationChange,
     onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
   const pageCount = table.getPageCount()
