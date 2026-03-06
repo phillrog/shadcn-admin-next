@@ -1,5 +1,8 @@
 # Shadcn Admin - Next.js Migration 🚀
 
+<img width="1452" height="736" alt="Gemini_Generated_Image_v6fwcdv6fwcdv6fw" src="https://github.com/user-attachments/assets/83a5f233-2712-496b-be8b-b7d01de7206c" />
+
+
 Este projeto é uma evolução direta do excelente trabalho feito pelo [satnaing/shadcn-admin](https://github.com/satnaing/shadcn-admin). Eu peguei a base sólida daquela aplicação (originalmente construída com Vite e TanStack Router) e a recriei do zero utilizando as convenções modernas do **Next.js App Router**.
 
 O meu objetivo principal foi transformar um SPA (Single Page Application) tradicional em uma aplicação robusta, escalável e pronta para o mercado atual, aproveitando os benefícios de SSR (Server Side Rendering), roteamento baseado em arquivos e otimizações nativas do Next.js.
@@ -26,15 +29,22 @@ O resultado final é uma aplicação administrativa moderna que:
 3.  **É extremamente fácil de escalar** graças à organização por funcionalidades.
 4.  **Está pronta para produção**, com rotas de autenticação e tratamento de erros totalmente funcionais.
 
-
 ## Como rodar o projeto
 
 ```bash
 # Instalar dependências
 npm install
 
+
 # Rodar em desenvolvimento
 npm run dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000) e explore o resultado desta migração!
+
+
+## Resultado
+
+![next](https://github.com/user-attachments/assets/c45cdbd8-f9ae-46d0-9d68-929433566dab)
+
+
